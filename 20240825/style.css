@@ -1,0 +1,55 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+h1 {
+    margin-top: 20px;
+}
+
+.bracket {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.round {
+    margin: 20px 0;
+    width: 100%;
+}
+
+.round h2 {
+    margin-bottom: 10px;
+}
+
+.match {
+    margin: 10px 5px;
+    padding: 10px;
+    border: 1px solid #000;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    display: inline-block;
+    width: 150px;
+    text-align: center;
+}
+
+.match a {
+    text-decoration: none;
+    color: #000;
+    font-weight: bold;
+}
+
+.final .match {
+    background-color: #ffd700;
+}
+
+.third-place .match {
+    background-color: #c0c0c0;
+}
+
+.semi-final .match {
+    background-color: #cd7f32;
+}
+.gameBox{
+    display: inline-block;
+}
