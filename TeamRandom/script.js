@@ -1,11 +1,17 @@
 document.getElementById('match-form').addEventListener('submit', function(event) {
     event.preventDefault();
-    
+
     const numPlayers = parseInt(document.getElementById('numPlayers').value, 10);
     const numGroups = parseInt(document.getElementById('numGroups').value, 10);
-    
+
     if (numPlayers <= 0 || numGroups <= 0) {
         alert('人數和分組數都必須大於零');
+        return;
+    }
+
+    // 檢查組數是否超過玩家的一半
+    if (numGroups > Math.floor(numPlayers / 2)) {
+        alert(`組數不應超過人數的一半，否則無法形成有效對戰組別。`);
         return;
     }
 
@@ -53,7 +59,7 @@ document.getElementById('match-form').addEventListener('submit', function(event)
                 matches.push(`${group[j]} vs ${group[j + 1]}`);
             }
         }
-        result.innerHTML += `<p>第 ${i + 1} 組: ${matches.join(', ')}</p>`;
+        result.innerHTML += `<h5>第 ${i + 1} 組:</h5> ${matches.join(',<br> ')} <hr>`;
     });
 
     // 顯示種子選手
