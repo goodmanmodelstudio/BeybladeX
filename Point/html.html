@@ -2,73 +2,56 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>一對一計分工具</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>計分工具</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script> <!-- 引入SheetJS -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container mt-5">
-        <table class="table table-bordered text-center">
-            <thead>
-                <tr>
-                    <th><h2 id="player1-name">玩家 1</h2></th>
-                    <th><h2 id="player2-name">玩家 2</h2></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><h1 class="score" id="score1">0</h1></td>
-                    <td><h1 class="score" id="score2">0</h1></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="d-grid gap-2 player-buttons" id="player1-buttons">
-                            <button class="btn btn-success" onclick="addScore('player1', 1, '轉停')">轉停</button>
-                            <button class="btn btn-success" onclick="addScore('player1', 2, '擊飛')">擊飛</button>
-                            <button class="btn btn-success" onclick="addScore('player1', 2, '爆裂')">爆裂</button>
-                            <button class="btn btn-success" onclick="addScore('player1', 3, '極限')">極限</button>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="d-grid gap-2 player-buttons" id="player2-buttons">
-                            <button class="btn btn-success" onclick="addScore('player2', 1, '轉停')">轉停</button>
-                            <button class="btn btn-success" onclick="addScore('player2', 2, '擊飛')">擊飛</button>
-                            <button class="btn btn-success" onclick="addScore('player2', 2, '爆裂')">爆裂</button>
-                            <button class="btn btn-success" onclick="addScore('player2', 3, '極限')">極限</button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="winner"></div>
-                        <div class="details" id="player1-details"></div>
-                    </td>
-                    <td>
-                        <div class="winner"></div>
-                        <div class="details" id="player2-details"></div>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2">
-                        <button class="btn btn-primary w-100" onclick="swapPlayers()">交換位置</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2">
-                        <button class="btn btn-warning w-100" onclick="resetGame()">重新開始</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2">
-                        <button class="btn btn-info w-100" onclick="exportToExcel()">匯出結果</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="container text-center mt-5">
+        <div class="row">
+            <div class="col">
+                <h2><input type="text" id="player1-name-input" value="玩家 1" class="form-control text-center"></h2>
+                <h1 id="score1" class="score-display">0</h1>
+            </div>
+            <div class="col">
+                <h2><input type="text" id="player2-name-input" value="玩家 2" class="form-control text-center"></h2>
+                <h1 id="score2" class="score-display">0</h1>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col" style="display:grid;gap:.5rem;">
+                <button class="btn btn-primary" onclick="addScore('player1', 1, '轉停')">轉停 +1</button>
+                <button class="btn btn-primary" onclick="addScore('player1', 2, '擊飛')">擊飛 +2</button>
+                <button class="btn btn-primary" onclick="addScore('player1', 2, '爆裂')">爆裂 +2</button>
+                <button class="btn btn-primary" onclick="addScore('player1', 3, '極限')">極限 +3</button>
+            </div>
+            <div class="col" style="display:grid;gap:.5rem;">
+                <button class="btn btn-primary" onclick="addScore('player2', 1, '轉停')">轉停 +1</button>
+                <button class="btn btn-primary" onclick="addScore('player2', 2, '擊飛')">擊飛 +2</button>
+                <button class="btn btn-primary" onclick="addScore('player2', 2, '爆裂')">爆裂 +2</button>
+                <button class="btn btn-primary" onclick="addScore('player2', 3, '極限')">極限 +3</button>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col">
+                <button class="btn btn-warning" onclick="swapPlayers()">交換位置</button>
+                <button class="btn btn-danger" onclick="resetGame()">重新開始</button>
+                <button class="btn btn-success" onclick="exportToExcel()">匯出結果</button>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col">
+                <div id="match-details"></div> <!-- 比賽結果將顯示在這裡 -->
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col">
+                <h3 id="winner-display" class="winner"></h3> <!-- 勝利者顯示 -->
+            </div>
+        </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
