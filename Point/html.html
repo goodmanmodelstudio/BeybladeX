@@ -120,6 +120,32 @@
             <h2 class="section-title" id="terminal-title">單機自帶計分板</h2>
         </div>
 
+        <!-- 即時相機與慢動作回放卡片 -->
+        <div class="glass-panel p-3 mb-4" id="camera-card" style="position: relative;">
+            <div style="position: relative; overflow: hidden; border-radius: 8px;">
+                <video id="camera-preview" autoplay playsinline muted style="width: 100%; height: 180px; object-fit: cover; background: #000; display: block; border-radius: 8px;"></video>
+                <video id="replay-viewer" playsinline style="width: 100%; height: 180px; object-fit: cover; background: #000; display: none; border-radius: 8px;"></video>
+                
+                <!-- 慢動回放控制按鈕 (覆蓋在視訊上方) -->
+                <div id="replay-speed-controls" style="display: none; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 5px 12px; border-radius: 20px; gap: 8px; align-items: center; border: 1px solid var(--border-color); backdrop-filter: blur(5px); z-index:10;">
+                    <span style="font-size: 11px; color: var(--neon-gold); font-family: 'Orbitron', sans-serif; font-weight:700; margin-right: 5px;">REPLAY:</span>
+                    <button class="btn btn-sm btn-neon btn-neon-dark py-0 px-2" style="font-size:11px;" onclick="changeReplaySpeed(0.25)">0.25x</button>
+                    <button class="btn btn-sm btn-neon btn-neon-dark py-0 px-2" style="font-size:11px;" onclick="changeReplaySpeed(0.5)">0.5x</button>
+                    <button class="btn btn-sm btn-neon btn-neon-dark py-0 px-2" style="font-size:11px;" onclick="changeReplaySpeed(1.0)">1.0x</button>
+                    <button class="btn btn-sm btn-neon btn-neon-magenta py-0 px-2 ms-2" style="font-size:11px;" onclick="closeReplay()">✕ 關閉</button>
+                </div>
+            </div>
+            
+            <div class="row g-2 mt-2">
+                <div class="col-6">
+                    <button id="btn-camera-toggle" class="btn btn-neon btn-neon-dark w-100 py-2" onclick="initCamera()" style="font-size:13px; height: 100%;">📷 啟動高速鏡頭</button>
+                </div>
+                <div class="col-6">
+                    <button id="btn-record-action" class="btn btn-neon btn-neon-cyan w-100 py-2" onclick="toggleRecording()" style="font-size:13px; height: 100%;" disabled>🔴 開始錄影</button>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-4 text-center">
             <!-- 選手 1 (左側) -->
             <div class="col-6">
@@ -153,6 +179,7 @@
         <!-- 操控按鈕列 -->
         <div class="control-btns mt-5">
             <button class="btn btn-neon btn-neon-dark" onclick="swapPlayers()" id="btn-swap">交換位置</button>
+            <button class="btn btn-neon btn-neon-dark" onclick="undoLastScore()" id="btn-undo" title="復原上一次計分誤觸">↩ 復原上一動</button>
             <button class="btn btn-neon btn-neon-dark" onclick="resetGame()" id="btn-reset">重新開始</button>
             <button class="btn btn-neon btn-neon-cyan" onclick="exportToExcel()" id="btn-export">匯出結果</button>
             <button class="btn btn-neon btn-neon-cyan" style="display:none;" id="btn-submit">送出對戰結果 🏁</button>

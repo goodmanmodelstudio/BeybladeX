@@ -18,6 +18,12 @@ let matches = [];   // 離線模式：儲存所有局的記錄
 let rounds = [];    // 當前局每一場得分細節
 let roundCount = 0; // 當前局場次計算
 
+// 高速相機錄影與回放專用變數
+let mediaStream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let replayUrl = null;
+let isRecording = false;
 // 大會分布式模式專用變數
 let isDistributedMode = false;
 let currentStadiumId = null;
@@ -139,6 +145,9 @@ function handleDistributedStateUpdate(state) {
 // 核心計分方法
 function addScore(player, points, method) {
     if (gameEnded) return;
+
+    // 🏆 UX 核心極速操作：一鍵計分時，自動關閉慢動回放、重置並恢復實時相機預覽，省去裁判手動點選關閉！
+    closeReplay();
 
     roundCount++; 
     let player1Name = document.getElementById('player1-name-input').value;
@@ -377,6 +386,79 @@ function swapPlayers() {
     }
 }
 
+// 復原上一次得分判定 (Undo)
+function undoLastScore() {
+    if (rounds.length === 0) {
+        alert("目前尚無計分紀錄可以復原！");
+        return;
+    }
+
+    if (confirm("是否要取消並復原上一次的得分判定？")) {
+        const lastEvent = rounds.pop();
+        roundCount--;
+
+        let player1Name = document.getElementById('player1-name-input').value;
+        let player2Name = document.getElementById('player2-name-input').value;
+
+        // 判定扣除哪位選手的分數
+        let targetPlayerKey = null;
+        if (lastEvent.scorer === player1Name) {
+            targetPlayerKey = 'player1';
+            scores.player1 -= lastEvent.points;
+            if (scores.player1 < 0) scores.player1 = 0;
+            document.getElementById('score1').innerText = scores.player1;
+        } else if (lastEvent.scorer === player2Name) {
+            targetPlayerKey = 'player2';
+            scores.player2 -= lastEvent.points;
+            if (scores.player2 < 0) scores.player2 = 0;
+            document.getElementById('score2').innerText = scores.player2;
+        }
+
+        // 扣除統計詳細次數
+        if (targetPlayerKey) {
+            details[targetPlayerKey][lastEvent.method] -= 1;
+            if (details[targetPlayerKey][lastEvent.method] < 0) {
+                details[targetPlayerKey][lastEvent.method] = 0;
+            }
+        }
+
+        // 如果之前比賽已結束，現在因為復原分數而重新開啟
+        if (gameEnded) {
+            gameEnded = false;
+            enableScoringButtons();
+            
+            // 隱藏送出按鈕與清除勝利顯示
+            document.getElementById('btn-submit').style.display = 'none';
+            document.getElementById('winner-display').innerText = '';
+        }
+
+        // 重新渲染歷程表格
+        renderMatchDetailsList();
+
+        // === 大會模式：即時同步復原後的比分與局明細至 Firebase ===
+        if (isDistributedMode && FirebaseService.isConfigured()) {
+            const db = FirebaseService.getDb();
+            db.ref(`tournament/matches/${currentMatchId}`).update({
+                score1: scores.player1,
+                score2: scores.player2,
+                rounds: rounds,
+                status: "playing", // 恢復為進行中
+                winner: null       // 清空勝者
+            }).then(() => {
+                console.log("Match score reverted and synced in Firebase successfully.");
+            }).catch(error => {
+                console.error("Error reverting match score in Firebase:", error);
+            });
+        } else if (!isDistributedMode) {
+            // 離線模式：更新離線歷程顯示
+            updateMatchDetailsOffline();
+        }
+        
+        // UX 親切提示：復原後自動關閉影片，回到相機預覽
+        closeReplay();
+    }
+}
+
 // 返回分組 (離線模式)
 function goBackToGroup() {
     window.history.back();
@@ -490,4 +572,127 @@ function generateStadiumQR() {
     
     // 平滑滾動到 QR Code 區域
     qrDisplayArea.scrollIntoView({ behavior: 'smooth' });
+}
+
+// === 🎥 高速相機與慢動作回放的核心機制 ===
+
+// 1. 初始化並啟動手機相機預覽
+function initCamera() {
+    if (mediaStream) return; // 已啟動則略過
+    
+    const btnToggle = document.getElementById('btn-camera-toggle');
+    const btnRecord = document.getElementById('btn-record-action');
+    
+    btnToggle.disabled = true;
+    btnToggle.innerText = "正在啟動鏡頭...";
+    
+    // 調用手機背面高畫質主相機 (facingMode: environment)，不錄音以維持檔案超小且避免權限繁瑣
+    navigator.mediaDevices.getUserMedia({
+        video: {
+            facingMode: "environment",
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+        },
+        audio: false
+    }).then(stream => {
+        mediaStream = stream;
+        const preview = document.getElementById('camera-preview');
+        preview.srcObject = stream;
+        
+        // 初始化 MediaRecorder
+        // 優先採用 webm 格式，如果瀏覽器不支援則會拋出 fallback
+        let options = { mimeType: 'video/webm' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = { mimeType: 'video/mp4' };
+        }
+        
+        mediaRecorder = new MediaRecorder(stream, options);
+        
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+                recordedChunks.push(e.data);
+            }
+        };
+        
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
+            recordedChunks = [];
+            
+            if (replayUrl) URL.revokeObjectURL(replayUrl);
+            replayUrl = URL.createObjectURL(blob);
+            
+            // 切換視訊顯示：隱藏預覽，顯示播放器
+            const viewer = document.getElementById('replay-viewer');
+            const preview = document.getElementById('camera-preview');
+            
+            preview.style.display = 'none';
+            viewer.style.display = 'block';
+            viewer.src = replayUrl;
+            viewer.loop = true;
+            viewer.playbackRate = 0.25; // 預設以 4 倍慢動作 (0.25x) 自動循環播放！
+            viewer.play();
+            
+            // 展現慢動作速度控制器
+            document.getElementById('replay-speed-controls').style.display = 'flex';
+        };
+        
+        btnToggle.innerText = "⚡ 高速鏡頭已啟用";
+        btnRecord.disabled = false;
+        console.log("High-speed arena camera initialized successfully.");
+    }).catch(err => {
+        console.error("Camera access error:", err);
+        btnToggle.disabled = false;
+        btnToggle.innerText = "📷 啟動高速鏡頭";
+        alert("無法啟動相機！請確認已允許相機存取權限，且網頁是在 HTTPS 安全網址下開啟。");
+    });
+}
+
+// 2. 開始/停止錄影切換
+function toggleRecording() {
+    if (!mediaRecorder) return;
+    
+    const btn = document.getElementById('btn-record-action');
+    
+    if (!isRecording) {
+        // 開始錄影
+        recordedChunks = [];
+        
+        // 自動關閉上一局的回放
+        closeReplay();
+        
+        mediaRecorder.start();
+        isRecording = true;
+        
+        btn.innerHTML = "⏹ 停止錄影 Stop";
+        btn.className = "btn btn-neon btn-neon-magenta w-100 py-2";
+    } else {
+        // 停止錄影
+        mediaRecorder.stop();
+        isRecording = false;
+        
+        btn.innerHTML = "🔴 開始錄影 Record";
+        btn.className = "btn btn-neon btn-neon-cyan w-100 py-2";
+    }
+}
+
+// 3. 調整回放速度 (0.25x / 0.5x / 1.0x)
+function changeReplaySpeed(speed) {
+    const viewer = document.getElementById('replay-viewer');
+    if (viewer) {
+        viewer.playbackRate = speed;
+    }
+}
+
+// 4. 關閉回放視訊，恢復實時預覽
+function closeReplay() {
+    const viewer = document.getElementById('replay-viewer');
+    const preview = document.getElementById('camera-preview');
+    const speedControls = document.getElementById('replay-speed-controls');
+    
+    if (viewer && viewer.style.display !== 'none') {
+        viewer.pause();
+        viewer.style.display = 'none';
+        preview.style.display = 'block';
+        speedControls.style.display = 'none';
+    }
 }
