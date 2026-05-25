@@ -1,0 +1,27 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+}
+
+.score {
+    font-size: 3.5em;
+    margin-bottom: 20px;
+}
+
+.winner {
+    margin-top: 20px;
+    font-size: 2em;
+    color: #d9534f;
+}
+
+.details {
+    font-size: 1em;
+    text-align: left;
+    margin-top: 20px;
+}
+
+.details div {
+    word-break: break-word;
+}

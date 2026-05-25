@@ -1,3 +1,70 @@
+// 保存分組信息到 JSON 文件
+function saveGroupsToJson(groups) {
+    fetch('path/to/your/save_groups.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(groups)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Group data saved:', data);
+    })
+    .catch(error => {
+        console.error('Error saving group data:', error);
+    });
+}
+
+// 在頁面加載時從 JSON 文件讀取分組信息
+window.onload = function() {
+    fetch('path/to/your/group_data.json')
+        .then(response => response.json())
+        .then(savedGroups => {
+            if (savedGroups) {
+                generateGroupList(savedGroups);
+            }
+        })
+        .catch(error => console.error('Error loading group data:', error));
+}
+
+document.getElementById('clear-storage').addEventListener('click', function() {
+    if (confirm('你確定要清除所有比賽紀錄嗎？這個動作無法復原。')) {
+        // 清除保存的 JSON 文件内容 (這需要在伺服器端處理)
+        fetch('path/to/your/clear_groups.php', {
+            method: 'POST'
+        })
+        .then(() => {
+            // 重置頁面上的相關顯示
+            document.getElementById('result').innerHTML = '';
+            alert('所有紀錄已清除。');
+        })
+        .catch(error => console.error('Error clearing group data:', error));
+    }
+});
+
+function generateGroupList(groups) {
+    const result = document.getElementById('result');
+    result.innerHTML = '';
+
+    groups.forEach((group, i) => {
+        const matches = [];
+        for (let j = 0; j < group.length; j += 2) {
+            if (group[j + 1] !== undefined) {
+                // 使用超連結將對戰編號傳遞給計分工具
+                matches.push(`<a href="../Point/html.html?player1=Player${group[j]}&player2=Player${group[j + 1]}" class="match-link">Player ${group[j]} vs Player ${group[j + 1]}</a>`);
+            }
+        }
+        result.innerHTML += `<h5>第 ${i + 1} 組:</h5> ${matches.join(',<br> ')} <hr>`;
+    });
+
+    // 顯示種子選手
+    const seedPlayers = groups.seedPlayers || [];
+    if (seedPlayers.length > 0) {
+        result.innerHTML += `<p>種子選手: ${seedPlayers.join(', ')}</p>`;
+    }
+}
+
 document.getElementById('match-form').addEventListener('submit', function(event) {
     event.preventDefault();
 
@@ -11,7 +78,7 @@ document.getElementById('match-form').addEventListener('submit', function(event)
 
     // 檢查組數是否超過玩家的一半
     if (numGroups > Math.floor(numPlayers / 2)) {
-        alert(`組數不應超過人數的一半，否則無法形成有效對戰組別。`);
+        alert('組數不應超過人數的一半，否則無法形成有效對戰組別。');
         return;
     }
 
@@ -51,19 +118,12 @@ document.getElementById('match-form').addEventListener('submit', function(event)
         }
     });
 
-    // 計算每組對戰
-    groups.forEach((group, i) => {
-        const matches = [];
-        for (let j = 0; j < group.length; j += 2) {
-            if (group[j + 1] !== undefined) {
-                matches.push(`${group[j]} vs ${group[j + 1]}`);
-            }
-        }
-        result.innerHTML += `<h5>第 ${i + 1} 組:</h5> ${matches.join(',<br> ')} <hr>`;
-    });
+    // 將種子選手保存在分組中
+    groups.seedPlayers = seedPlayers;
 
-    // 顯示種子選手
-    if (seedPlayers.length > 0) {
-        result.innerHTML += `<p>種子選手: ${seedPlayers.join(', ')}</p>`;
-    }
+    // 計算每組對戰
+    generateGroupList(groups);
+
+    // 保存分組信息到 JSON 文件
+    saveGroupsToJson(groups);
 });

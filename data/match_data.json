@@ -1,0 +1,19 @@
+[
+    {
+        "player1": {
+            "name": "Player 1",
+            "score": 3,
+            "details": { "轉停": 1, "擊飛": 2, "爆裂": 0, "極限": 0 }
+        },
+        "player2": {
+            "name": "Player 2",
+            "score": 4,
+            "details": { "轉停": 0, "擊飛": 3, "爆裂": 1, "極限": 0 }
+        },
+        "roundDetails": [
+            { "round": 1, "scorer": "Player 1", "points": 1, "method": "轉停" },
+            { "round": 2, "scorer": "Player 2", "points": 2, "method": "擊飛" },
+            { "round": 3, "scorer": "Player 2", "points": 2, "method": "爆裂" }
+        ]
+    }
+]

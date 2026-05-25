@@ -1,0 +1,232 @@
+/* 
+ * 好男人陀螺實驗室 - 全局現代化電競電晶風格樣式系統
+ * 提供統一的深色毛玻璃、霓虹發光與科幻電子字型系統
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Outfit:wght@300;400;600;800&display=swap');
+
+:root {
+    --bg-dark: #090b0f;
+    --bg-card: rgba(21, 25, 34, 0.75);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-glow: rgba(0, 242, 254, 0.15);
+    
+    --neon-cyan: #00f2fe;
+    --neon-blue: #4facfe;
+    --neon-magenta: #ff0844;
+    --neon-pink: #ffb199;
+    --neon-gold: #f5af19;
+    --neon-green: #00ff87;
+    
+    --text-main: #f0f3f8;
+    --text-muted: #8e9bb0;
+}
+
+/* 全局樣式重置 */
+body {
+    background-color: var(--bg-dark);
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(0, 242, 254, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(255, 8, 68, 0.05) 0%, transparent 40%);
+    color: var(--text-main);
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* 科幻毛玻璃面板 */
+.glass-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.glass-panel:hover {
+    border-color: rgba(0, 242, 254, 0.25);
+    box-shadow: 0 12px 40px 0 rgba(0, 242, 254, 0.08);
+}
+
+/* 霓虹發光文字與分數 */
+.score-digital {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    text-shadow: 0 0 10px currentColor;
+}
+
+.text-glow-cyan {
+    color: var(--neon-cyan);
+    text-shadow: 0 0 8px rgba(0, 242, 254, 0.5);
+}
+
+.text-glow-magenta {
+    color: var(--neon-magenta);
+    text-shadow: 0 0 8px rgba(255, 8, 68, 0.5);
+}
+
+.text-glow-gold {
+    color: var(--neon-gold);
+    text-shadow: 0 0 8px rgba(245, 175, 25, 0.5);
+}
+
+/* 統一輸入框樣式 */
+.form-input {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-main);
+    padding: 10px 15px;
+    font-size: 16px;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 10px rgba(0, 242, 254, 0.25);
+    background: rgba(0, 0, 0, 0.6);
+}
+
+/* 霓虹電競按鈕 */
+.btn-neon {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-neon-cyan {
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-cyan));
+    color: #000;
+    box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+}
+
+.btn-neon-cyan:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 242, 254, 0.5);
+}
+
+.btn-neon-magenta {
+    background: linear-gradient(135deg, var(--neon-magenta), var(--neon-pink));
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(255, 8, 68, 0.3);
+}
+
+.btn-neon-magenta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 8, 68, 0.5);
+}
+
+.btn-neon-dark {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+}
+
+.btn-neon-dark:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 網頁標頭導覽區 */
+header {
+    background: rgba(11, 14, 20, 0.9);
+    border-bottom: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    margin: 0;
+    background: linear-gradient(to right, #00f2fe, #ff0844);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+header nav {
+    display: flex;
+    gap: 20px;
+}
+
+header nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+header nav a:hover, header nav a.active {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.05);
+    text-shadow: 0 0 5px rgba(255,255,255,0.2);
+}
+
+/* 頁尾 */
+footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    font-size: 12px;
+    border-top: 1px solid var(--border-color);
+    background: rgba(9, 11, 15, 0.95);
+    margin-top: auto;
+}
+
+/* 自適應網格排版 */
+.main-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+    position: relative;
+    display: inline-block;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 60%;
+    height: 3px;
+    background: linear-gradient(to right, var(--neon-cyan), transparent);
+}

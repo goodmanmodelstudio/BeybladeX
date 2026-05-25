@@ -1,57 +1,209 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>計分工具</title>
+    <title>裁判計分終端 - 好男人陀螺實驗室</title>
+    <!-- 引入 Bootstrap 5 (CDN) -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <!-- 引入大會統一現代化電競樣式 -->
+    <link rel="stylesheet" href="../style/modern.css">
+    <style>
+        body {
+            padding-bottom: 40px;
+        }
+        .score-display-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        .score-display-box.active-left {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.15);
+        }
+        .score-display-box.active-right {
+            border-color: var(--neon-magenta);
+            box-shadow: 0 0 20px rgba(255, 8, 68, 0.15);
+        }
+        .score-display {
+            font-size: 6rem;
+            margin: 10px 0;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+        }
+        .scoring-btn-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .referee-container {
+            max-width: 700px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .control-btns {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .control-btns button {
+            flex: 1;
+        }
+        /* 等待指派遮罩頁面 */
+        #referee-waiting-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-ring {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(0, 242, 254, 0.08);
+            border-top-color: var(--neon-cyan);
+            border-radius: 50%;
+            animation: spin 1.2s infinite linear;
+            margin: 30px auto;
+        }
+        #stadium-indicator {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            letter-spacing: 2px;
+            padding: 5px 12px;
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--neon-cyan);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container text-center mt-5">
-        <div class="row">
-            <div class="col">
-                <h2><input type="text" id="player1-name-input" value="玩家 1" class="form-control text-center"></h2>
-                <h1 id="score1" class="score-display">0</h1>
+    <!-- 裁判等待中遮罩 -->
+    <div id="referee-waiting-overlay">
+        <h2 class="text-glow-cyan" style="font-family: 'Orbitron', sans-serif; font-weight:900;">好男人陀螺實驗室 🧪</h2>
+        <div id="stadium-overlay-indicator" style="margin-top: 15px; font-size:18px; font-weight:600;">對戰台 A - 裁判計分端</div>
+        <div class="loading-ring"></div>
+        <p style="color: var(--text-muted); font-size: 15px; max-width: 300px; line-height: 1.6;">
+            ⏳ 目前該對戰台處於空閒狀態。<br>請等待管理員在後台指派新選手對戰，系統將會自動載入並開始！
+        </p>
+    </div>
+
+    <!-- 頂部 Header -->
+    <header>
+        <h1>好男人陀螺實驗室 🧪</h1>
+        <nav id="referee-nav">
+            <a href="../index.html">首頁</a>
+            <a href="../admin.html">賽事管理</a>
+            <a href="../dashboard.html">即時總覽大螢幕</a>
+        </nav>
+    </header>
+
+    <div class="container referee-container">
+        <div class="text-center mb-4">
+            <span id="stadium-indicator" style="display:none;">對戰台 A 終端</span>
+            <h2 class="section-title" id="terminal-title">單機自帶計分板</h2>
+        </div>
+
+        <div class="row g-4 text-center">
+            <!-- 選手 1 (左側) -->
+            <div class="col-6">
+                <div class="score-display-box active-left">
+                    <input type="text" id="player1-name-input" value="玩家 1" class="form-input text-center text-glow-cyan" style="font-weight: 800; font-size:18px;">
+                    <h1 id="score1" class="score-display text-glow-cyan">0</h1>
+                </div>
+                <div class="scoring-btn-grid mt-4">
+                    <button class="btn btn-neon btn-neon-cyan w-100" onclick="addScore('player1', 1, '轉停')">轉停 +1</button>
+                    <button class="btn btn-neon btn-neon-cyan w-100" onclick="addScore('player1', 2, '擊飛')">擊飛 +2</button>
+                    <button class="btn btn-neon btn-neon-cyan w-100" onclick="addScore('player1', 2, '爆裂')">爆裂 +2</button>
+                    <button class="btn btn-neon btn-neon-cyan w-100" onclick="addScore('player1', 3, '極限')">極限 +3</button>
+                </div>
             </div>
-            <div class="col">
-                <h2><input type="text" id="player2-name-input" value="玩家 2" class="form-control text-center"></h2>
-                <h1 id="score2" class="score-display">0</h1>
+
+            <!-- 選手 2 (右側) -->
+            <div class="col-6">
+                <div class="score-display-box active-right">
+                    <input type="text" id="player2-name-input" value="玩家 2" class="form-input text-center text-glow-magenta" style="font-weight: 800; font-size:18px;">
+                    <h1 id="score2" class="score-display text-glow-magenta">0</h1>
+                </div>
+                <div class="scoring-btn-grid mt-4">
+                    <button class="btn btn-neon btn-neon-magenta w-100" onclick="addScore('player2', 1, '轉停')">轉停 +1</button>
+                    <button class="btn btn-neon btn-neon-magenta w-100" onclick="addScore('player2', 2, '擊飛')">擊飛 +2</button>
+                    <button class="btn btn-neon btn-neon-magenta w-100" onclick="addScore('player2', 2, '爆裂')">爆裂 +2</button>
+                    <button class="btn btn-neon btn-neon-magenta w-100" onclick="addScore('player2', 3, '極限')">極限 +3</button>
+                </div>
             </div>
         </div>
-        <div class="row mt-3">
-            <div class="col" style="display:grid;gap:.5rem;">
-                <button class="btn btn-primary" onclick="addScore('player1', 1, '轉停')">轉停 +1</button>
-                <button class="btn btn-primary" onclick="addScore('player1', 2, '擊飛')">擊飛 +2</button>
-                <button class="btn btn-primary" onclick="addScore('player1', 2, '爆裂')">爆裂 +2</button>
-                <button class="btn btn-primary" onclick="addScore('player1', 3, '極限')">極限 +3</button>
-            </div>
-            <div class="col" style="display:grid;gap:.5rem;">
-                <button class="btn btn-primary" onclick="addScore('player2', 1, '轉停')">轉停 +1</button>
-                <button class="btn btn-primary" onclick="addScore('player2', 2, '擊飛')">擊飛 +2</button>
-                <button class="btn btn-primary" onclick="addScore('player2', 2, '爆裂')">爆裂 +2</button>
-                <button class="btn btn-primary" onclick="addScore('player2', 3, '極限')">極限 +3</button>
-            </div>
+
+        <!-- 操控按鈕列 -->
+        <div class="control-btns mt-5">
+            <button class="btn btn-neon btn-neon-dark" onclick="swapPlayers()" id="btn-swap">交換位置</button>
+            <button class="btn btn-neon btn-neon-dark" onclick="resetGame()" id="btn-reset">重新開始</button>
+            <button class="btn btn-neon btn-neon-cyan" onclick="exportToExcel()" id="btn-export">匯出結果</button>
+            <button class="btn btn-neon btn-neon-cyan" style="display:none;" id="btn-submit">送出對戰結果 🏁</button>
         </div>
-        <div class="row mt-3">
-            <div class="col">
-                <button class="btn btn-warning" onclick="swapPlayers()">交換位置</button>
-                <button class="btn btn-danger" onclick="resetGame()">重新開始</button>
-                <button class="btn btn-success" onclick="exportToExcel()">匯出結果</button>
+
+        <!-- 本地/大會對戰歷史明細 -->
+        <div class="glass-panel mt-5 p-4" id="details-section">
+            <h3 style="font-family: 'Orbitron', sans-serif; font-size: 16px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">對戰歷程 BATTLE HISTORY</h3>
+            <div id="match-details" style="color: var(--text-muted);">
+                <!-- 本局明細 -->
             </div>
+            <h3 id="winner-display" class="winner text-center text-glow-gold mt-4"></h3>
         </div>
-        <div class="row mt-3">
-            <div class="col">
-                <div id="match-details"></div> <!-- 比賽結果將顯示在這裡 -->
+
+        <!-- 大會聯網登入區 (僅在單機模式下顯示) -->
+        <div class="glass-panel p-4 mt-5" id="distributed-login-card">
+            <h3 class="text-glow-cyan" style="font-family: 'Orbitron', sans-serif; font-size: 16px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">🏆 切換至大會多裁判聯網模式</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">
+                如果您是大會裁判，請在此輸入指派給您的對戰台編號，登入大會計分終端或產生手機掃描二維碼。
+            </p>
+            <div class="row align-items-center g-3 mt-2">
+                <div class="col-sm-4">
+                    <input type="number" id="login-stadium-id" class="form-input" min="1" max="10" placeholder="對戰台編號 (例如: 1)">
+                </div>
+                <div class="col-sm-8 d-flex gap-3">
+                    <button class="btn btn-neon btn-neon-cyan flex-1" onclick="loginToStadium()">登入此終端 ➔</button>
+                    <button class="btn btn-neon btn-neon-dark flex-1" onclick="generateStadiumQR()">產生手機掃描 QR</button>
+                </div>
             </div>
-        </div>
-        <div class="row mt-3">
-            <div class="col">
-                <h3 id="winner-display" class="winner"></h3> <!-- 勝利者顯示 -->
+            
+            <!-- QR Code 顯示區域 -->
+            <div id="qr-display-area" style="display:none; text-align: center; margin-top: 25px; border-top: 1px dashed var(--border-color); padding-top: 20px;">
+                <h4 style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">請使用手機相機或 LINE 掃描下方 QR 碼以開啟評分頁面：</h4>
+                <div style="background: white; padding: 15px; display: inline-block; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+                    <img id="stadium-qr-image" src="" alt="Stadium QR Code" style="width: 180px; height: 180px;">
+                </div>
+                <p id="stadium-qr-url" style="font-size: 11px; color: var(--neon-cyan); margin-top: 12px; font-family: monospace; word-break: break-all;"></p>
             </div>
         </div>
     </div>
+
+    <!-- Firebase SDKs compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Excel Export JS -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <!-- Firebase config and service helper -->
+    <script src="../js/firebase-config.js"></script>
+    <script src="../js/firebase-service.js"></script>
+    <!-- Point script -->
     <script src="script.js"></script>
 </body>
 </html>

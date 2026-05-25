@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>賽事管理中心 - 好男人陀螺實驗室</title>
+    <link rel="stylesheet" href="style/modern.css">
+    <style>
+        .admin-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        @media (max-width: 768px) {
+            .admin-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .config-card {
+            padding: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        textarea.form-input {
+            height: 180px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 15px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .btn-group button {
+            flex: 1;
+        }
+        .active-status {
+            padding: 25px;
+        }
+        .stadium-pill-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .stadium-pill {
+            padding: 12px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .stadium-pill.playing {
+            border-color: var(--neon-cyan);
+            background: rgba(0, 242, 254, 0.05);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.1);
+        }
+        .stadium-pill .name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .stadium-pill .status {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .stadium-pill.playing .status {
+            color: var(--neon-cyan);
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 0;
+            font-size: 15px;
+        }
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+        .stat-row .val {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>好男人陀螺實驗室 🧪</h1>
+        <nav>
+            <a href="index.html">首頁</a>
+            <a href="admin.html" class="active">賽事管理</a>
+            <a href="dashboard.html">即時總覽大螢幕</a>
+            <a href="Records.html">賽事紀錄</a>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        <h2 class="section-title">賽事管理中心 ADMIN</h2>
+        
+        <div class="admin-grid">
+            <!-- 賽事設定區 -->
+            <section class="glass-panel config-card">
+                <h3 class="text-glow-cyan" style="margin-top:0; margin-bottom: 20px; font-family: 'Orbitron', sans-serif;">TOURNAMENT INITIALIZER</h3>
+                <form id="init-form">
+                    <div class="form-group">
+                        <label for="numStadiums">對戰台數量 (裁判端數量):</label>
+                        <input type="number" id="numStadiums" class="form-input" min="1" max="10" value="2" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="targetScore">獲勝目標分數:</label>
+                        <input type="number" id="targetScore" class="form-input" min="1" max="10" value="4" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="playerList">選手名單 (每行輸入一位選手姓名):</label>
+                        <textarea id="playerList" class="form-input" placeholder="例如：&#10;選手 A&#10;選手 B&#10;選手 C&#10;選手 D" required></textarea>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <button type="button" id="btn-shuffle" class="btn-neon btn-neon-dark">隨機打亂名單</button>
+                        <button type="submit" class="btn-neon btn-neon-cyan">一鍵生成賽程 ⚡</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- 目前賽事狀態 -->
+            <section class="glass-panel active-status">
+                <h3 class="text-glow-magenta" style="margin-top:0; margin-bottom: 20px; font-family: 'Orbitron', sans-serif;">LIVE STATUS</h3>
+                
+                <div id="no-active-tournament" style="text-align: center; padding: 40px 0; color: var(--text-muted);">
+                    <p style="font-size: 16px;">目前沒有正在進行的賽事。</p>
+                    <p style="font-size: 13px;">請在左側填寫選手名單並生成賽程！</p>
+                </div>
+                
+                <div id="active-tournament-details" style="display: none;">
+                    <div class="stat-row">
+                        <span>目前參賽人數</span>
+                        <span id="stat-players" class="val">0 人</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>對戰台總數</span>
+                        <span id="stat-stadiums" class="val">0 台</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>獲勝目標分值</span>
+                        <span id="stat-target" class="val">4 分</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>已完成對戰</span>
+                        <span id="stat-completed" class="val">0 / 0 場</span>
+                    </div>
+                    
+                    <h4 style="margin-top: 25px; margin-bottom: 10px; font-size: 15px; color: var(--text-muted);">對戰台分配實時狀態：</h4>
+                    <div id="stadium-pills" class="stadium-pill-grid">
+                        <!-- 對戰台小藥丸 -->
+                    </div>
+
+                    <div style="margin-top: 35px; border-top: 1px dashed var(--border-color); padding-top: 20px; display: flex; gap: 15px;">
+                        <button id="btn-view-dashboard" class="btn-neon btn-neon-cyan" style="flex:1;">大螢幕總覽看板</button>
+                        <button id="btn-reset" class="btn-neon btn-neon-magenta" style="flex:1;">強制清除賽事紀錄 ⚠️</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- 裁判端 QR Code 發光燈箱 Modal -->
+    <div id="qr-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:10000; justify-content:center; align-items:center; backdrop-filter:blur(8px);">
+        <div class="glass-panel text-center" style="max-width:400px; padding:30px; margin: 20px; border-color: var(--neon-cyan); box-shadow: 0 0 30px rgba(0,242,254,0.15); position:relative;">
+            <button id="qr-modal-close" style="position:absolute; top:12px; right:15px; background:none; border:none; color:var(--text-muted); font-size:22px; cursor:pointer;">&times;</button>
+            <h3 class="text-glow-cyan" id="qr-modal-title" style="font-family:'Orbitron',sans-serif; margin-bottom:15px; font-size:18px; font-weight:700;">對戰台 1 裁判 QR</h3>
+            <p style="font-size:12px; color:var(--text-muted); line-height:1.5; margin-bottom:20px;">請指定裁判使用手機相機或 LINE 掃描下方二維碼，即可快速開啟本對戰台的即時計分面板。</p>
+            <div style="background:white; padding:15px; display:inline-block; border-radius:12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                <img id="qr-modal-image" src="" alt="Stadium QR" style="width:200px; height:200px;">
+            </div>
+            <p id="qr-modal-url" style="font-size:10px; color:var(--neon-cyan); font-family:monospace; word-break:break-all; margin-top:15px; margin-bottom:0; background:rgba(0,0,0,0.3); padding:8px; border-radius:6px;"></p>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 好男人陀螺實驗室 - 電競賽事管理平台</p>
+    </footer>
+
+    <!-- Firebase SDKs compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Firebase config and dynamic service wrapper -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
+    <!-- Admin page logic -->
+    <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>好男人陀螺實驗室 - Beyblade X 賽事輔助平台</title>
+    <link rel="stylesheet" href="style/modern.css">
+    <style>
+        .portal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+            margin-bottom: 50px;
+        }
+        .portal-card {
+            padding: 30px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 220px;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+        .portal-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .portal-card p {
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        .portal-card .icon {
+            font-size: 32px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header"></div> <!-- 動態載入 Header -->
+
+    <main class="main-container text-center">
+        <h2 class="section-title" style="margin-top: 30px; font-size:28px;">歡迎來到好男人陀螺實驗室 🧪</h2>
+        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto; font-size:15px; line-height: 1.6;">
+            專為戰鬥陀螺 X (Beyblade X) 設計的數位賽事平台。支援大會多裁判即時分布式聯網計分、淘汰賽樹狀圖動態更新，以及單機分組、計分小工具。
+        </p>
+
+        <div class="portal-grid">
+            <!-- 賽事管理 -->
+            <a href="admin.html" class="glass-panel portal-card">
+                <div class="icon text-glow-cyan">⚙️</div>
+                <div>
+                    <h3 class="text-glow-cyan">大會賽事管理</h3>
+                    <p>設定參賽人數、對戰台裁判數，一鍵生成具備輪空 (BYE) 的淘汰賽程，並自動分配場地。</p>
+                </div>
+                <span class="btn-neon btn-neon-cyan btn-sm w-100">開啟控制台</span>
+            </a>
+
+            <!-- 大螢幕看板 -->
+            <a href="dashboard.html" class="glass-panel portal-card">
+                <div class="icon text-glow-magenta">📺</div>
+                <div>
+                    <h3 class="text-glow-magenta">即時總覽大螢幕</h3>
+                    <p>適合投影的大會看板！實時呈現各對戰台即時分數與晉級樹狀圖 (Bracket)，極致霓虹電競動效。</p>
+                </div>
+                <span class="btn-neon btn-neon-magenta btn-sm w-100">投影看板</span>
+            </a>
+
+            <!-- 單機分組工具 -->
+            <a href="TeamRandom/TeamRandom.html" class="glass-panel portal-card">
+                <div class="icon text-glow-gold">👥</div>
+                <div>
+                    <h3 class="text-glow-gold">單機分組工具</h3>
+                    <p>本地專用分組工具。輸入人數與組別，隨機打亂並快速安排對戰編號組合。</p>
+                </div>
+                <span class="btn-neon btn-neon-dark btn-sm w-100">開啟分組</span>
+            </a>
+
+            <!-- 單機計分工具 -->
+            <a href="Point/html.html" class="glass-panel portal-card">
+                <div class="icon text-glow-gold">🔢</div>
+                <div>
+                    <h3 class="text-glow-gold">單機計分工具</h3>
+                    <p>本地專用戰鬥陀螺計分板。支援轉停 +1、擊飛 +2、爆裂 +2、極限 +3 計算與匯出 Excel。</p>
+                </div>
+                <span class="btn-neon btn-neon-dark btn-sm w-100">開啟計分板</span>
+            </a>
+        </div>
+    </main>
+
+    <div id="footer"></div> <!-- 動態載入 Footer -->
+
+    <script>
+        // 動態載入 Header
+        fetch('layout/header.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('header').innerHTML = data;
+            });
+
+        // 動態載入 Footer
+        fetch('layout/footer.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('footer').innerHTML = data;
+            });
+    </script>
+</body>
+</html>

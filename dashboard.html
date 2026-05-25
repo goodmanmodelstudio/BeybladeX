@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大會即時對戰看板 - 好男人陀螺實驗室</title>
+    <link rel="stylesheet" href="style/modern.css">
+    <style>
+        /* 儀表板版面配置 */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* 對戰台即時狀況卡片網格 */
+        .stadium-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .stadium-card {
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 呼吸發光效果 */
+        .stadium-card.playing {
+            border-color: rgba(0, 242, 254, 0.4);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.1);
+            animation: borderPulse 3s infinite ease-in-out;
+        }
+
+        @keyframes borderPulse {
+            0% { border-color: rgba(0, 242, 254, 0.25); box-shadow: 0 0 15px rgba(0, 242, 254, 0.05); }
+            50% { border-color: rgba(0, 242, 254, 0.55); box-shadow: 0 0 25px rgba(0, 242, 254, 0.2); }
+            100% { border-color: rgba(0, 242, 254, 0.25); box-shadow: 0 0 15px rgba(0, 242, 254, 0.05); }
+        }
+
+        .stadium-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stadium-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        .stadium-title.active {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+        }
+
+        .stadium-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+
+        .stadium-badge.active {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--neon-cyan);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+        }
+
+        .battle-arena {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .fighter {
+            flex: 1;
+            text-align: center;
+        }
+
+        .fighter.left {
+            text-align: left;
+        }
+
+        .fighter.right {
+            text-align: right;
+        }
+
+        .fighter-name {
+            font-weight: 800;
+            font-size: 18px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+            display: inline-block;
+        }
+
+        .score-board {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 0 10px;
+        }
+
+        .score-num {
+            font-size: 38px;
+        }
+
+        .score-divider {
+            color: var(--text-muted);
+            font-size: 20px;
+            font-weight: 300;
+        }
+
+        /* 計分歷程小圓點 */
+        .round-log {
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            height: 48px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .log-item:last-child {
+            margin-bottom: 0;
+        }
+
+        /* 賽事對戰樹狀圖 (淘汰賽圖表) */
+        .bracket-scroll-container {
+            overflow-x: auto;
+            padding: 20px 0;
+            width: 100%;
+        }
+
+        .bracket-wrapper {
+            display: flex;
+            gap: 50px;
+            min-width: 800px;
+            justify-content: space-between;
+            padding: 10px;
+        }
+
+        .bracket-round {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            flex: 1;
+            gap: 20px;
+        }
+
+        .round-header-label {
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 15px;
+            color: var(--text-muted);
+        }
+
+        /* 對戰組合卡片 */
+        .bracket-match {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 220px;
+            padding: 8px 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+            position: relative;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .bracket-match.playing {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.2);
+            animation: matchPulse 2s infinite ease-in-out;
+        }
+
+        @keyframes matchPulse {
+            0% { box-shadow: 0 0 8px rgba(0, 242, 254, 0.1); }
+            50% { box-shadow: 0 0 16px rgba(0, 242, 254, 0.3); }
+            100% { box-shadow: 0 0 8px rgba(0, 242, 254, 0.1); }
+        }
+
+        .match-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .match-row.winner {
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .match-row .name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 130px;
+        }
+
+        .match-row .score {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            width: 20px;
+            text-align: center;
+        }
+
+        .match-row.winner .score {
+            color: var(--neon-gold);
+            text-shadow: 0 0 6px rgba(245, 175, 25, 0.4);
+        }
+
+        .bracket-match::after {
+            content: '';
+            position: absolute;
+            height: 2px;
+            background: var(--border-color);
+            z-index: -1;
+        }
+
+        /* 輪標籤樣式 */
+        .match-info-tag {
+            font-size: 9px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-family: 'Orbitron', sans-serif;
+            position: absolute;
+            top: -7px;
+            right: 8px;
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>好男人陀螺實驗室 🧪</h1>
+        <nav>
+            <a href="index.html">首頁</a>
+            <a href="admin.html">賽事管理</a>
+            <a href="dashboard.html" class="active">即時總覽大螢幕</a>
+            <a href="Records.html">賽事紀錄</a>
+        </nav>
+    </header>
+
+    <main class="dashboard-container">
+        <!-- 頂部即時對戰台 -->
+        <h2 class="section-title">對戰台實時狀況 STADIUM ARENA</h2>
+        <div id="stadiums-container" class="stadium-grid">
+            <!-- 動態插入對戰台卡片 -->
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px 0; color: var(--text-muted);">
+                正在等待賽事啟動...
+            </div>
+        </div>
+
+        <!-- 淘汰賽樹狀圖 -->
+        <h2 class="section-title">賽事晉級樹狀圖 TOURNAMENT BRACKET</h2>
+        <div class="glass-panel" style="padding: 25px; margin-bottom: 50px;">
+            <div class="bracket-scroll-container">
+                <div id="bracket-root" class="bracket-wrapper">
+                    <!-- 動態渲染賽事淘汰賽樹狀圖 -->
+                    <div style="text-align: center; width: 100%; padding: 40px 0; color: var(--text-muted);">
+                        尚未初始化賽事樹狀圖。請前往「賽事管理」設定！
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 好男人陀螺實驗室 - 電競大會即時大看板</p>
+    </footer>
+
+    <!-- Firebase SDKs compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <!-- Firebase config and service wrapper -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
+    <!-- Dashboard page logic -->
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
