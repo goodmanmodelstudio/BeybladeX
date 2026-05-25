@@ -600,13 +600,8 @@ function initCamera() {
         preview.srcObject = stream;
         
         // 初始化 MediaRecorder
-        // 優先採用 webm 格式，如果瀏覽器不支援則會拋出 fallback
-        let options = { mimeType: 'video/webm' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            options = { mimeType: 'video/mp4' };
-        }
-        
-        mediaRecorder = new MediaRecorder(stream, options);
+        // 讓瀏覽器自主決定最安全且支援的預設相容格式（iOS Safari 與 Android Chrome 各自不同），這在行動端上最為保險與相容！
+        mediaRecorder = new MediaRecorder(stream);
         
         mediaRecorder.ondataavailable = (e) => {
             if (e.data.size > 0) {
@@ -695,4 +690,27 @@ function closeReplay() {
         preview.style.display = 'block';
         speedControls.style.display = 'none';
     }
+}
+
+// 5. 將錄影結果下載並儲存至手機本機相簿/檔案庫
+function downloadRecordedVideo() {
+    if (!replayUrl) {
+        alert("目前尚無可供下載的錄影存檔！");
+        return;
+    }
+    
+    const a = document.createElement('a');
+    a.href = replayUrl;
+    
+    // 依據對戰台與目前時間命名下載檔案
+    const stadiumName = isDistributedMode ? `Stadium_${currentStadiumId}` : "Offline";
+    a.download = `BeybladeX_Match_${stadiumName}_Round_${roundCount}_${Date.now()}.mp4`;
+    
+    document.body.appendChild(a);
+    a.click();
+    
+    // 延遲移除暫存元素
+    setTimeout(() => {
+        document.body.removeChild(a);
+    }, 100);
 }

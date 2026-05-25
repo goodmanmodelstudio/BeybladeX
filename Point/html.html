@@ -124,15 +124,16 @@
         <div class="glass-panel p-3 mb-4" id="camera-card" style="position: relative;">
             <div style="position: relative; overflow: hidden; border-radius: 8px;">
                 <video id="camera-preview" autoplay playsinline muted style="width: 100%; height: 180px; object-fit: cover; background: #000; display: block; border-radius: 8px;"></video>
-                <video id="replay-viewer" playsinline style="width: 100%; height: 180px; object-fit: cover; background: #000; display: none; border-radius: 8px;"></video>
+                <video id="replay-viewer" playsinline muted style="width: 100%; height: 180px; object-fit: cover; background: #000; display: none; border-radius: 8px;"></video>
                 
                 <!-- 慢動回放控制按鈕 (覆蓋在視訊上方) -->
-                <div id="replay-speed-controls" style="display: none; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 5px 12px; border-radius: 20px; gap: 8px; align-items: center; border: 1px solid var(--border-color); backdrop-filter: blur(5px); z-index:10;">
-                    <span style="font-size: 11px; color: var(--neon-gold); font-family: 'Orbitron', sans-serif; font-weight:700; margin-right: 5px;">REPLAY:</span>
-                    <button class="btn btn-sm btn-neon btn-neon-dark py-0 px-2" style="font-size:11px;" onclick="changeReplaySpeed(0.25)">0.25x</button>
-                    <button class="btn btn-sm btn-neon btn-neon-dark py-0 px-2" style="font-size:11px;" onclick="changeReplaySpeed(0.5)">0.5x</button>
-                    <button class="btn btn-sm btn-neon btn-neon-dark py-0 px-2" style="font-size:11px;" onclick="changeReplaySpeed(1.0)">1.0x</button>
-                    <button class="btn btn-sm btn-neon btn-neon-magenta py-0 px-2 ms-2" style="font-size:11px;" onclick="closeReplay()">✕ 關閉</button>
+                <div id="replay-speed-controls" style="display: none; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); padding: 5px 12px; border-radius: 20px; gap: 6px; align-items: center; border: 1px solid var(--border-color); backdrop-filter: blur(5px); z-index:10; white-space: nowrap;">
+                    <span style="font-size: 10px; color: var(--neon-gold); font-family: 'Orbitron', sans-serif; font-weight:700; margin-right: 2px;">REPLAY:</span>
+                    <button class="btn btn-sm btn-neon btn-neon-dark py-0 px-2" style="font-size:10px;" onclick="changeReplaySpeed(0.25)">0.25x</button>
+                    <button class="btn btn-sm btn-neon btn-neon-dark py-0 px-2" style="font-size:10px;" onclick="changeReplaySpeed(0.5)">0.5x</button>
+                    <button class="btn btn-sm btn-neon btn-neon-dark py-0 px-2" style="font-size:10px;" onclick="changeReplaySpeed(1.0)">1.0x</button>
+                    <button class="btn btn-sm btn-neon btn-neon-cyan py-0 px-2" style="font-size:10px;" onclick="downloadRecordedVideo()" title="下載此回合影片至手機">📥 下載</button>
+                    <button class="btn btn-sm btn-neon btn-neon-magenta py-0 px-2" style="font-size:10px;" onclick="closeReplay()">✕</button>
                 </div>
             </div>
             
