@@ -7,6 +7,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const bracketRoot = document.getElementById('bracket-root');
     let dbListenerRef = null;
 
+    // 載入收闔狀態 (上下手風琴展開使用)
+    let collapsedRounds = new Set();
+    try {
+        const stored = localStorage.getItem('collapsedRounds');
+        if (stored) {
+            collapsedRounds = new Set(JSON.parse(stored));
+        }
+    } catch (e) {
+        console.error('Failed to load collapsedRounds from localStorage', e);
+    }
+
+    function saveCollapsedRounds() {
+        try {
+            localStorage.setItem('collapsedRounds', JSON.stringify([...collapsedRounds]));
+        } catch (e) {
+            console.error('Failed to save collapsedRounds to localStorage', e);
+        }
+    }
+
     // 1. 主要渲染入口
     function updateDashboard(state) {
         if (!state) {
@@ -100,13 +119,23 @@ document.addEventListener('DOMContentLoaded', () => {
         bracketRoot.innerHTML = '';
         const matchesArray = Object.values(state.matches);
         
+        if (matchesArray.length === 0) {
+            bracketRoot.innerHTML = `
+                <div style="text-align: center; width: 100%; padding: 40px 0; color: var(--text-muted);">
+                    尚未初始化賽事樹狀圖。
+                </div>
+            `;
+            return;
+        }
+
         // 獲取最大輪數 (Round)
         const totalRounds = Math.max(...matchesArray.map(m => m.round));
 
-        // 依輪次建立欄位
+        // 依輪次建立區塊 (現在是上下堆疊的手風琴結構)
         for (let r = 1; r <= totalRounds; r++) {
             const roundColumn = document.createElement('div');
-            roundColumn.className = 'bracket-round';
+            const isCollapsed = collapsedRounds.has(r);
+            roundColumn.className = `bracket-round ${isCollapsed ? 'collapsed' : ''}`;
             
             // 建立輪標題
             let roundName = `複賽 Round ${r}`;
@@ -121,8 +150,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const header = document.createElement('div');
             header.className = 'round-header-label';
-            header.innerText = roundName;
+            
+            // 加上展開/收闔指示箭頭
+            const icon = isCollapsed ? ' ▸' : ' ▾';
+            header.innerHTML = `<span>${roundName}</span><span class="collapse-icon">${icon}</span>`;
+            
+            // 點擊事件監聽器，切換收闔狀態
+            header.addEventListener('click', () => {
+                if (collapsedRounds.has(r)) {
+                    collapsedRounds.delete(r);
+                } else {
+                    collapsedRounds.add(r);
+                }
+                saveCollapsedRounds();
+                renderBracket(state);
+            });
+            
             roundColumn.appendChild(header);
+
+            // 建立對戰卡片容器 (Grid 排版)
+            const matchesGrid = document.createElement('div');
+            matchesGrid.className = 'round-matches-grid';
 
             // 過濾並排序當前輪次的所有比賽
             const roundMatches = matchesArray
@@ -161,9 +209,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="score">${match.status === 'pending' && !match.player2 ? '-' : match.score2}</span>
                     </div>
                 `;
-                roundColumn.appendChild(matchCard);
+                matchesGrid.appendChild(matchCard);
             });
 
+            roundColumn.appendChild(matchesGrid);
             bracketRoot.appendChild(roundColumn);
         }
     }

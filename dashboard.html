@@ -151,47 +151,88 @@
 
         /* 賽事對戰樹狀圖 (淘汰賽圖表) */
         .bracket-scroll-container {
-            overflow-x: auto;
-            padding: 20px 0;
+            overflow-x: hidden;
+            padding: 10px 0;
             width: 100%;
         }
 
         .bracket-wrapper {
             display: flex;
-            gap: 50px;
-            min-width: 800px;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
             padding: 10px;
+            box-sizing: border-box;
         }
 
         .bracket-round {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            justify-content: space-around;
-            flex: 1;
-            gap: 20px;
+            gap: 15px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .bracket-round.collapsed {
+            background: rgba(255, 255, 255, 0.005);
+            padding: 15px 20px;
+            gap: 0;
         }
 
         .round-header-label {
             font-family: 'Orbitron', sans-serif;
-            text-align: center;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 700;
             letter-spacing: 1px;
-            padding: 8px;
+            padding: 12px 20px;
             background: rgba(255, 255, 255, 0.03);
-            border-bottom: 2px solid var(--border-color);
-            margin-bottom: 15px;
-            color: var(--text-muted);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 0;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s ease;
         }
 
-        /* 對戰組合卡片 */
+        .round-header-label:hover {
+            background: rgba(0, 242, 254, 0.08);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.15);
+            color: var(--neon-cyan);
+            text-shadow: 0 0 8px rgba(0, 242, 254, 0.5);
+        }
+
+        .round-header-label .collapse-icon {
+            font-family: sans-serif;
+            font-size: 18px;
+        }
+
+        /* 網格對戰場次容器 */
+        .round-matches-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            padding-top: 10px;
+            transition: opacity 0.3s ease;
+        }
+
+        .bracket-round.collapsed .round-matches-grid {
+            display: none;
+        }
+
         .bracket-match {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             width: 100%;
-            max-width: 220px;
+            max-width: 100%;
             padding: 8px 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.25);
             position: relative;
