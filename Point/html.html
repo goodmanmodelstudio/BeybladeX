@@ -91,6 +91,94 @@
             display: inline-block;
             margin-bottom: 20px;
         }
+        /* 全螢幕慢動作裁判回放面板 (Modal Overlay) */
+        #replay-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(9, 11, 15, 0.96);
+            backdrop-filter: blur(10px);
+            z-index: 10050; /* 比等待遮罩更高 */
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+        .replay-modal-content {
+            width: 100%;
+            max-width: 640px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-video-container {
+            position: relative;
+            width: 100%;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #modal-replay-viewer {
+            width: 100%;
+            max-height: 50vh;
+            display: block;
+            object-fit: contain;
+        }
+        /* 加大進度條樣式 */
+        .custom-scrubber {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 12px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            outline: none;
+            margin: 15px 0 5px 0;
+            transition: background 0.3s;
+        }
+        .custom-scrubber::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--neon-cyan);
+            border: 2px solid #fff;
+            transition: transform 0.1s;
+        }
+        .custom-scrubber::-webkit-slider-thumb:active {
+            transform: scale(1.2);
+        }
+        .custom-scrubber::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--neon-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--neon-cyan);
+            border: 2px solid #fff;
+            transition: transform 0.1s;
+        }
+        .custom-scrubber::-moz-range-thumb:active {
+            transform: scale(1.2);
+        }
+        .btn-replay-control {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .speed-btn-group button {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -124,7 +212,7 @@
         <div class="glass-panel p-3 mb-4" id="camera-card" style="position: relative;">
             <div style="position: relative; overflow: hidden; border-radius: 8px;">
                 <video id="camera-preview" autoplay playsinline muted style="width: 100%; height: 180px; object-fit: cover; background: #000; display: block; border-radius: 8px;"></video>
-                <video id="replay-viewer" playsinline muted style="width: 100%; height: 180px; object-fit: cover; background: #000; display: none; border-radius: 8px;"></video>
+                <video id="replay-viewer" playsinline muted controls style="width: 100%; height: 180px; object-fit: cover; background: #000; display: none; border-radius: 8px;"></video>
                 
                 <!-- 慢動回放控制按鈕 (覆蓋在視訊上方) -->
                 <div id="replay-speed-controls" style="display: none; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); padding: 5px 12px; border-radius: 20px; gap: 6px; align-items: center; border: 1px solid var(--border-color); backdrop-filter: blur(5px); z-index:10; white-space: nowrap;">
@@ -145,6 +233,7 @@
                     <button id="btn-record-action" class="btn btn-neon btn-neon-cyan w-100 py-2" onclick="toggleRecording()" style="font-size:13px; height: 100%;" disabled>🔴 開始錄影</button>
                 </div>
             </div>
+            <button id="btn-replay-last" class="btn btn-neon btn-neon-dark w-100 py-2 mt-2" onclick="reopenLastReplay()" style="font-size:13px; display: none;">👁️ 重播本回合對戰影片 (慢動作/進度條)</button>
         </div>
 
         <div class="row g-4 text-center">
@@ -221,6 +310,52 @@
             </div>
         </div>
     </div>
+
+    <!-- 🎥 全螢幕慢動作裁判回放面板 (Modal Overlay) -->
+    <div id="replay-modal">
+        <div class="replay-modal-content">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 id="replay-modal-title" class="text-glow-cyan m-0" style="font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight:800; letter-spacing: 1px;">
+                    ⚡ ROUND REPLAY 慢動作判定
+                </h4>
+                <button class="btn btn-sm btn-neon btn-neon-magenta py-1 px-3" onclick="closeModalReplay()" style="font-size:12px;">✕ 關閉</button>
+            </div>
+            
+            <div class="modal-video-container">
+                <video id="modal-replay-viewer" playsinline muted></video>
+            </div>
+            
+            <!-- 加大進度條 -->
+            <input type="range" id="modal-replay-scrubber" class="custom-scrubber" min="0" max="100" step="0.01" value="0">
+            <div class="d-flex justify-content-between text-muted" style="font-size: 11px; font-family: 'Orbitron', sans-serif; font-weight: 700; letter-spacing: 0.5px;">
+                <span id="modal-replay-time-current" class="text-glow-cyan">0.00s</span>
+                <span id="modal-replay-time-total">0.00s</span>
+            </div>
+            
+            <!-- 影格與控制列 -->
+            <div class="d-flex justify-content-between align-items-center mt-3 gap-2">
+                <button class="btn btn-neon btn-neon-dark btn-replay-control py-2 flex-1" style="font-size:12px;" onclick="stepReplayFrame(-0.05)" title="後退 1 影格 (0.05秒)">⏪ 逐格後退</button>
+                <button id="btn-modal-play-pause" class="btn btn-neon btn-neon-cyan btn-replay-control py-2 px-4" style="font-size:12px;" onclick="toggleModalPlay()">⏸ 暫停</button>
+                <button class="btn btn-neon btn-neon-dark btn-replay-control py-2 flex-1" style="font-size:12px;" onclick="stepReplayFrame(0.05)" title="前進 1 影格 (0.05秒)">⏩ 逐格前進</button>
+            </div>
+            
+            <!-- 速度選擇與全螢幕/下載 -->
+            <div class="row g-2 mt-2">
+                <div class="col-8">
+                    <div class="d-flex gap-1 speed-btn-group" id="modal-speed-group">
+                        <button id="btn-speed-025" class="btn btn-sm btn-neon btn-neon-dark py-2 px-1" style="font-size:10px;" onclick="changeModalReplaySpeed(0.25)">0.25x</button>
+                        <button id="btn-speed-05" class="btn btn-sm btn-neon btn-neon-dark py-2 px-1" style="font-size:10px;" onclick="changeModalReplaySpeed(0.5)">0.5x</button>
+                        <button id="btn-speed-10" class="btn btn-sm btn-neon btn-neon-dark py-2 px-1" style="font-size:10px;" onclick="changeModalReplaySpeed(1.0)">1.0x</button>
+                    </div>
+                </div>
+                <div class="col-4 d-flex gap-1">
+                    <button class="btn btn-sm btn-neon btn-neon-dark py-2 flex-1" style="font-size:10px;" onclick="toggleFullscreenReplay()" title="全螢幕播放">📺 全螢幕</button>
+                    <button id="btn-modal-download" class="btn btn-sm btn-neon btn-neon-cyan py-2 flex-1" style="font-size:10px;" onclick="downloadModalRecordedVideo()" title="下載此影片至手機">📥 下載</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Firebase SDKs compat -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>

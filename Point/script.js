@@ -24,6 +24,9 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let replayUrl = null;
 let isRecording = false;
+let roundReplays = {};       // 儲存每一回合的影片快取 { blob, url }
+let currentModalRound = 1;   // 當前 Modal 中播放的場次
+let isScrubbing = false;     // 進度條拖拉狀態
 // 大會分布式模式專用變數
 let isDistributedMode = false;
 let currentStadiumId = null;
@@ -146,8 +149,9 @@ function handleDistributedStateUpdate(state) {
 function addScore(player, points, method) {
     if (gameEnded) return;
 
-    // 🏆 UX 核心極速操作：一鍵計分時，自動關閉慢動回放、重置並恢復實時相機預覽，省去裁判手動點選關閉！
+    // 🏆 UX 核心極速操作：一鍵計分時，自動關閉慢動回放與全螢幕彈出面板、重置並恢復實時相機預覽，省去裁判手動點選關閉！
     closeReplay();
+    closeModalReplay();
 
     roundCount++; 
     let player1Name = document.getElementById('player1-name-input').value;
@@ -271,6 +275,7 @@ function renderMatchDetailsList() {
                     <th>${player1Name}</th>
                     <th>${player2Name}</th>
                     <th>得分方式</th>
+                    <th>判定回放</th>
                 </tr>
             </thead>
             <tbody>`;
@@ -285,12 +290,19 @@ function renderMatchDetailsList() {
         if (player1Score) player1Total += round.points;
         if (player2Score) player2Total += round.points;
 
+        const roundNum = index + 1;
+        const hasReplay = roundReplays[roundNum] ? true : false;
+        const replayBtn = hasReplay 
+            ? `<button class="btn btn-sm btn-neon btn-neon-cyan py-0 px-2" style="font-size:10px; font-weight:800; text-shadow: 0 0 5px rgba(0,242,254,0.5);" onclick="openModalReplay(${roundNum})" title="重播此回合判定影片">🎥 重播</button>` 
+            : `<span style="font-size:10px; color:var(--text-muted);">無錄影</span>`;
+
         matchTable += `
             <tr>
-                <td>第 ${index + 1} 場</td>
+                <td>第 ${roundNum} 場</td>
                 <td class="${player1Score ? 'text-glow-cyan font-weight-bold' : ''}">${player1Score}</td>
                 <td class="${player2Score ? 'text-glow-magenta font-weight-bold' : ''}">${player2Score}</td>
                 <td style="font-size:13px;">${round.method}</td>
+                <td>${replayBtn}</td>
             </tr>`;
     });
 
@@ -301,6 +313,7 @@ function renderMatchDetailsList() {
                     <th>總分</th>
                     <th class="text-glow-cyan font-weight-bold" style="font-family:'Orbitron',sans-serif; font-size:16px;">${player1Total}</th>
                     <th class="text-glow-magenta font-weight-bold" style="font-family:'Orbitron',sans-serif; font-size:16px;">${player2Total}</th>
+                    <th></th>
                     <th></th>
                 </tr>
             </tfoot>
@@ -320,11 +333,29 @@ function resetGameLocalState() {
     rounds = [];
     roundCount = 0;
 
+    // 釋放所有快取的影片 Blob URL，確保沒有記憶體洩漏
+    if (roundReplays) {
+        for (const key in roundReplays) {
+            if (roundReplays[key] && roundReplays[key].url) {
+                URL.revokeObjectURL(roundReplays[key].url);
+            }
+        }
+        roundReplays = {};
+    }
+
+    if (replayUrl) {
+        URL.revokeObjectURL(replayUrl);
+        replayUrl = null;
+    }
+
     document.getElementById('score1').innerText = 0;
     document.getElementById('score2').innerText = 0;
     document.getElementById('match-details').innerHTML = '<div style="text-align:center; color:var(--text-muted);">尚無對戰數據</div>';
     document.getElementById('winner-display').innerText = '';
     document.getElementById('btn-submit').style.display = 'none';
+    
+    // 隱藏重播按鈕
+    document.getElementById('btn-replay-last').style.display = 'none';
 
     enableScoringButtons();
 }
@@ -613,22 +644,22 @@ function initCamera() {
             const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType });
             recordedChunks = [];
             
-            if (replayUrl) URL.revokeObjectURL(replayUrl);
-            replayUrl = URL.createObjectURL(blob);
+            const currentUrl = URL.createObjectURL(blob);
             
-            // 切換視訊顯示：隱藏預覽，顯示播放器
-            const viewer = document.getElementById('replay-viewer');
-            const preview = document.getElementById('camera-preview');
+            // 記錄至多回合影片快取中！(下一場的場次為 roundCount + 1)
+            const nextRoundNum = roundCount + 1;
+            roundReplays[nextRoundNum] = {
+                blob: blob,
+                url: currentUrl
+            };
             
-            preview.style.display = 'none';
-            viewer.style.display = 'block';
-            viewer.src = replayUrl;
-            viewer.loop = true;
-            viewer.playbackRate = 0.25; // 預設以 4 倍慢動作 (0.25x) 自動循環播放！
-            viewer.play();
+            replayUrl = currentUrl;
             
-            // 展現慢動作速度控制器
-            document.getElementById('replay-speed-controls').style.display = 'flex';
+            // 顯示「重播本回合影片」按鈕，讓裁判隨時可以點選
+            document.getElementById('btn-replay-last').style.display = 'block';
+            
+            // 直接彈出全新的全螢幕慢動作判定面板！
+            openModalReplay(nextRoundNum);
         };
         
         btnToggle.innerText = "⚡ 高速鏡頭已啟用";
@@ -692,25 +723,234 @@ function closeReplay() {
     }
 }
 
-// 5. 將錄影結果下載並儲存至手機本機相簿/檔案庫
-function downloadRecordedVideo() {
-    if (!replayUrl) {
+// 5. 下載錄影結果，支援 iOS/Android 原生 Web Share API 橋接 (一鍵儲存影片至相簿)
+function downloadRecordedVideo(roundNum) {
+    const videoData = roundReplays[roundNum] || { blob: null, url: replayUrl };
+    const url = videoData.url;
+    const blob = videoData.blob;
+
+    if (!url) {
         alert("目前尚無可供下載的錄影存檔！");
         return;
     }
     
-    const a = document.createElement('a');
-    a.href = replayUrl;
+    // 優先嘗試：使用 HTML5 原生 Web Share API 橋接至手機系統原生分享/媒體儲存面板
+    if (blob && navigator.canShare && navigator.share) {
+        const stadiumName = isDistributedMode ? `Stadium_${currentStadiumId}` : "Offline";
+        const fileName = `BeybladeX_${stadiumName}_Round_${roundNum}.mp4`;
+        const file = new File([blob], fileName, { type: blob.type || 'video/mp4' });
+        
+        if (navigator.canShare({ files: [file] })) {
+            navigator.share({
+                files: [file],
+                title: `第 ${roundNum} 場對戰影片`,
+                text: `好男人陀螺實驗室 - 第 ${roundNum} 場慢動作判定影片`
+            }).then(() => {
+                console.log("Successfully shared file natively!");
+            }).catch(err => {
+                console.warn("Native share error or cancelled:", err);
+                if (err.name !== 'AbortError') {
+                    fallbackDownload(url, roundNum);
+                }
+            });
+            return; // 成功喚起原生分享面板，結束
+        }
+    }
     
-    // 依據對戰台與目前時間命名下載檔案
-    const stadiumName = isDistributedMode ? `Stadium_${currentStadiumId}` : "Offline";
-    a.download = `BeybladeX_Match_${stadiumName}_Round_${roundCount}_${Date.now()}.mp4`;
+    // 降級方案：使用傳統瀏覽器下載任務
+    fallbackDownload(url, roundNum);
+}
+
+// 降級下載輔助函式
+function fallbackDownload(url, roundNum) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     
-    document.body.appendChild(a);
-    a.click();
+    if (isIOS || isSafari) {
+        alert("【下載說明】\n影片將在新分頁打開。請長按影片畫面或點選瀏覽器的「分享」按鈕，選擇「儲存影片」即可直接存入手機相簿。");
+        window.open(url, '_blank');
+    } else {
+        const a = document.createElement('a');
+        a.href = url;
+        const stadiumName = isDistributedMode ? `Stadium_${currentStadiumId}` : "Offline";
+        a.download = `BeybladeX_${stadiumName}_Round_${roundNum}_${Date.now()}.mp4`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+        }, 150);
+    }
+}
+
+// 6. 重播本回合最新對戰影片
+function reopenLastReplay() {
+    const targetRound = roundCount + 1; // 本回合 (計分前或計分後回看最後一回合)
+    openModalReplay(targetRound);
+}
+
+// === 🎥 全螢幕慢動作判定面板的控制邏輯 ===
+
+// 打開慢動作判定彈出面板
+function openModalReplay(roundNum) {
+    const videoData = roundReplays[roundNum];
+    const url = videoData ? videoData.url : replayUrl;
+    if (!url) {
+        alert("尚無本回合的錄影存檔！");
+        return;
+    }
+
+    currentModalRound = roundNum;
+
+    const modal = document.getElementById('replay-modal');
+    const viewer = document.getElementById('modal-replay-viewer');
+    const scrubber = document.getElementById('modal-replay-scrubber');
+    const title = document.getElementById('replay-modal-title');
+    const playPauseBtn = document.getElementById('btn-modal-play-pause');
+
+    title.innerText = `⚡ 第 ${roundNum} 場 慢動作裁判判定`;
     
-    // 延遲移除暫存元素
-    setTimeout(() => {
-        document.body.removeChild(a);
-    }, 100);
+    // 設定影片來源
+    viewer.src = url;
+    viewer.loop = true;
+    viewer.playbackRate = 0.25; // 預設 4 倍慢動作
+    
+    // 重設播放/暫停按鈕
+    playPauseBtn.innerHTML = "⏸ 暫停";
+    playPauseBtn.className = "btn btn-neon btn-neon-cyan btn-replay-control py-2 px-4";
+
+    // 顯示 Modal Overlay
+    modal.style.display = 'flex';
+
+    // 綁定影片載入事件
+    viewer.onloadedmetadata = function() {
+        scrubber.max = viewer.duration;
+        document.getElementById('modal-replay-time-total').innerText = viewer.duration.toFixed(2) + "s";
+    };
+
+    // 監聽時間更新以同步進度條
+    viewer.ontimeupdate = function() {
+        if (!isScrubbing) {
+            scrubber.value = viewer.currentTime;
+            document.getElementById('modal-replay-time-current').innerText = viewer.currentTime.toFixed(2) + "s";
+        }
+    };
+
+    // 進度條拖拉事件
+    scrubber.oninput = function() {
+        isScrubbing = true;
+        viewer.pause(); // 拖拉時暫停播放以防抖動
+        viewer.currentTime = scrubber.value;
+        document.getElementById('modal-replay-time-current').innerText = parseFloat(scrubber.value).toFixed(2) + "s";
+        
+        playPauseBtn.innerHTML = "▶ 播放";
+        playPauseBtn.className = "btn btn-neon btn-neon-dark btn-replay-control py-2 px-4";
+    };
+
+    scrubber.onchange = function() {
+        isScrubbing = false;
+        // 放開後維持暫停，方便裁判逐格微調，若想繼續播放裁判可點擊播放按鈕
+    };
+
+    // 預設高亮 0.25x 速度按鈕
+    highlightSpeedButton(0.25);
+    
+    // 開始播放
+    viewer.play().catch(e => console.warn("Auto-play blocked, requiring interaction:", e));
+}
+
+// 關閉判定彈出面板
+function closeModalReplay() {
+    const modal = document.getElementById('replay-modal');
+    const viewer = document.getElementById('modal-replay-viewer');
+    
+    if (viewer) {
+        viewer.pause();
+        viewer.src = "";
+    }
+    
+    modal.style.display = 'none';
+}
+
+// 播放/暫停切換
+function toggleModalPlay() {
+    const viewer = document.getElementById('modal-replay-viewer');
+    const playPauseBtn = document.getElementById('btn-modal-play-pause');
+
+    if (viewer.paused) {
+        viewer.play();
+        playPauseBtn.innerHTML = "⏸ 暫停";
+        playPauseBtn.className = "btn btn-neon btn-neon-cyan btn-replay-control py-2 px-4";
+    } else {
+        viewer.pause();
+        playPauseBtn.innerHTML = "▶ 播放";
+        playPauseBtn.className = "btn btn-neon btn-neon-dark btn-replay-control py-2 px-4";
+    }
+}
+
+// 影格微調 (前進/後退 delta 秒，例如 0.05 秒)
+function stepReplayFrame(delta) {
+    const viewer = document.getElementById('modal-replay-viewer');
+    if (!viewer) return;
+    
+    viewer.pause();
+    const playPauseBtn = document.getElementById('btn-modal-play-pause');
+    playPauseBtn.innerHTML = "▶ 播放";
+    playPauseBtn.className = "btn btn-neon btn-neon-dark btn-replay-control py-2 px-4";
+
+    // 計算新時間
+    let newTime = viewer.currentTime + delta;
+    if (newTime < 0) newTime = 0;
+    if (newTime > viewer.duration) newTime = viewer.duration;
+    
+    viewer.currentTime = newTime;
+    document.getElementById('modal-replay-time-current').innerText = newTime.toFixed(2) + "s";
+    document.getElementById('modal-replay-scrubber').value = newTime;
+}
+
+// 改變播放速度 (0.25x / 0.5x / 1.0x)
+function changeModalReplaySpeed(speed) {
+    const viewer = document.getElementById('modal-replay-viewer');
+    if (viewer) {
+        viewer.playbackRate = speed;
+        highlightSpeedButton(speed);
+    }
+}
+
+// 高亮目前選擇的速度按鈕
+function highlightSpeedButton(speed) {
+    const btn025 = document.getElementById('btn-speed-025');
+    const btn05 = document.getElementById('btn-speed-05');
+    const btn10 = document.getElementById('btn-speed-10');
+
+    // 重設所有速度按鈕為 dark 樣式
+    btn025.className = "btn btn-sm btn-neon btn-neon-dark py-2 px-1";
+    btn05.className = "btn btn-sm btn-neon btn-neon-dark py-2 px-1";
+    btn10.className = "btn btn-sm btn-neon btn-neon-dark py-2 px-1";
+
+    if (speed === 0.25) {
+        btn025.className = "btn btn-sm btn-neon btn-neon-cyan py-2 px-1";
+    } else if (speed === 0.5) {
+        btn05.className = "btn btn-sm btn-neon btn-neon-cyan py-2 px-1";
+    } else if (speed === 1.0) {
+        btn10.className = "btn btn-sm btn-neon btn-neon-cyan py-2 px-1";
+    }
+}
+
+// 全螢幕切換
+function toggleFullscreenReplay() {
+    const viewer = document.getElementById('modal-replay-viewer');
+    if (!viewer) return;
+
+    if (viewer.requestFullscreen) {
+        viewer.requestFullscreen();
+    } else if (viewer.webkitRequestFullscreen) { /* Safari / iOS */
+        viewer.webkitRequestFullscreen();
+    } else if (viewer.msRequestFullscreen) {
+        viewer.msRequestFullscreen();
+    }
+}
+
+// Modal 下載當前影片
+function downloadModalRecordedVideo() {
+    downloadRecordedVideo(currentModalRound);
 }
