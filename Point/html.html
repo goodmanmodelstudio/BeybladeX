@@ -175,6 +175,7 @@
             padding: 8px 16px;
             font-size: 14px;
             font-weight: bold;
+            touch-action: manipulation; /* 禁用雙擊放大手勢，防止快速連點時畫面放大 */
         }
         .speed-btn-group button {
             flex: 1;
@@ -211,8 +212,8 @@
         <!-- 即時相機與慢動作回放卡片 -->
         <div class="glass-panel p-3 mb-4" id="camera-card" style="position: relative;">
             <div style="position: relative; overflow: hidden; border-radius: 8px;">
-                <video id="camera-preview" autoplay playsinline muted style="width: 100%; height: 180px; object-fit: cover; background: #000; display: block; border-radius: 8px;"></video>
-                <video id="replay-viewer" playsinline muted controls style="width: 100%; height: 180px; object-fit: cover; background: #000; display: none; border-radius: 8px;"></video>
+                <video id="camera-preview" autoplay playsinline muted style="width: 100%; height: 180px; object-fit: contain; background: #000; display: block; border-radius: 8px;"></video>
+                <video id="replay-viewer" playsinline muted controls style="width: 100%; height: 180px; object-fit: contain; background: #000; display: none; border-radius: 8px;"></video>
                 
                 <!-- 慢動回放控制按鈕 (覆蓋在視訊上方) -->
                 <div id="replay-speed-controls" style="display: none; position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); padding: 5px 12px; border-radius: 20px; gap: 6px; align-items: center; border: 1px solid var(--border-color); backdrop-filter: blur(5px); z-index:10; white-space: nowrap;">
