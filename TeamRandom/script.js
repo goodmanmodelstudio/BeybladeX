@@ -52,16 +52,41 @@ function generateGroupList(groups) {
         for (let j = 0; j < group.length; j += 2) {
             if (group[j + 1] !== undefined) {
                 // 使用超連結將對戰編號傳遞給計分工具
-                matches.push(`<a href="../Point/html.html?player1=Player${group[j]}&player2=Player${group[j + 1]}" class="match-link">Player ${group[j]} vs Player ${group[j + 1]}</a>`);
+                matches.push(`
+                    <div class="match-item-wrapper">
+                        <a href="../Point/html.html?player1=Player${group[j]}&player2=Player${group[j + 1]}" class="match-link">
+                            <span class="p1">Player ${group[j]}</span>
+                            <span class="vs">VS</span>
+                            <span class="p2">Player ${group[j + 1]}</span>
+                        </a>
+                    </div>
+                `);
             }
         }
-        result.innerHTML += `<h5>第 ${i + 1} 組:</h5> ${matches.join(',<br> ')} <hr>`;
+        
+        if (matches.length > 0) {
+            result.innerHTML += `
+                <div class="glass-panel result-card">
+                    <h4>👥 第 ${i + 1} 組</h4>
+                    <div class="match-list">
+                        ${matches.join('')}
+                    </div>
+                </div>
+            `;
+        }
     });
 
     // 顯示種子選手
     const seedPlayers = groups.seedPlayers || [];
     if (seedPlayers.length > 0) {
-        result.innerHTML += `<p>種子選手: ${seedPlayers.join(', ')}</p>`;
+        result.innerHTML += `
+            <div class="glass-panel result-card" style="border-color: var(--neon-cyan); box-shadow: 0 4px 20px rgba(0, 242, 254, 0.05);">
+                <h4 style="color: var(--neon-cyan); text-shadow: 0 0 8px rgba(0, 242, 254, 0.4); border-bottom-color: rgba(0, 242, 254, 0.2);">⭐ 種子輪空選手 (BYE)</h4>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                    ${seedPlayers.map(p => `<span class="seed-pill">Player ${p}</span>`).join('')}
+                </div>
+            </div>
+        `;
     }
 }
 

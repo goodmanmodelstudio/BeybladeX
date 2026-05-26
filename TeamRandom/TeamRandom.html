@@ -3,30 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>對戰組合安排</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="styles.css">
+    <title>對戰組合安排 - 好男人陀螺實驗室</title>
+    <link rel="stylesheet" href="../style/modern.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center mb-4">對戰組合安排</h1>
-        <form id="match-form" class="mb-4">
+    <div id="header"></div> <!-- 動態載入 Header -->
+
+    <main class="team-container">
+        <h2 class="section-title">對戰組合安排 TEAM ALLOCATOR</h2>
+        
+        <form id="match-form" class="glass-panel group-form">
+            <h3 class="text-glow-cyan" style="margin-top:0; margin-bottom: 25px; font-family: 'Orbitron', sans-serif;">LOCAL GROUP ALLOCATION</h3>
+            
             <div class="form-group">
-                <label for="numPlayers">人數:</label>
-                <input type="number" id="numPlayers" class="form-control" required>
+                <label for="numPlayers">參賽人數:</label>
+                <input type="number" id="numPlayers" class="form-input" min="2" placeholder="請輸入總人數" required>
             </div>
+            
             <div class="form-group">
-                <label for="numGroups">分幾組:</label>
-                <input type="number" id="numGroups" class="form-control" required>
+                <label for="numGroups">分組數量:</label>
+                <input type="number" id="numGroups" class="form-input" min="1" placeholder="請輸入欲分配的組數" required>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">安排對戰</button>
-            <button id="clear-storage" class="btn btn-danger btn-block">清除紀錄</button>
+            
+            <div style="display: flex; gap: 15px; margin-top: 30px;">
+                <button type="submit" class="btn-neon btn-neon-cyan" style="flex: 2;">安排分組對戰 ⚡</button>
+                <button type="button" id="clear-storage" class="btn-neon btn-neon-magenta" style="flex: 1;">清除紀錄 ⚠️</button>
+            </div>
         </form>
+        
         <div id="result"></div>
-    </div>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    </main>
+
+    <div id="footer"></div> <!-- 動態載入 Footer -->
+
+    <script>
+        // 動態載入 Header，並智慧修復子目錄相對路徑與 active 狀態
+        fetch('../layout/header.html')
+            .then(response => response.text())
+            .then(data => {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data;
+                const links = tempDiv.querySelectorAll('a');
+                links.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href && !href.startsWith('http' ) && !href.startsWith('#')) {
+                        if (href.startsWith('TeamRandom/')) {
+                            link.setAttribute('href', href.replace('TeamRandom/', ''));
+                        } else {
+                            link.setAttribute('href', '../' + href);
+                        }
+                    }
+                    // 高亮單機分組工具這個按鈕
+                    if (link.getAttribute('href') === 'TeamRandom.html' || link.getAttribute('href') === 'TeamRandom.html') {
+                        link.classList.add('active');
+                    }
+                });
+                document.getElementById('header').innerHTML = tempDiv.innerHTML;
+            });
+
+        // 動態載入 Footer
+        fetch('../layout/footer.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('footer').innerHTML = data;
+            });
+    </script>
     <script src="script.js"></script>
 </body>
 </html>

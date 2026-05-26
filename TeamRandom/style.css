@@ -1,21 +1,113 @@
-body {
-    background-color: #f8f9fa;
+/* 
+ * 好男人陀螺實驗室 - 單機分組工具專屬現代化霓虹樣式
+ */
+
+.team-container {
+    max-width: 650px;
+    margin: 40px auto;
+    padding: 0 20px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.container {
-    max-width: 600px;
+.group-form {
+    padding: 30px;
+    margin-bottom: 35px;
 }
 
-h1 {
-    color: #343a40;
+.form-group {
+    margin-bottom: 22px;
 }
 
-#result p {
-    background-color: #ffffff;
-    border: 1px solid #dee2e6;
-    border-radius: 0.25rem;
-    padding: 10px;
-    margin-bottom: 10px;
-    font-size: 1.1rem;
-    color: #495057;
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+/* 分組結果卡片樣式 */
+.result-card {
+    margin-bottom: 25px;
+    padding: 25px;
+}
+
+.result-card h4 {
+    font-family: 'Orbitron', sans-serif;
+    color: var(--neon-gold);
+    text-shadow: 0 0 8px rgba(245, 175, 25, 0.4);
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 17px;
+    border-bottom: 1px dashed rgba(245, 175, 25, 0.2);
+    padding-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.match-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.match-item-wrapper {
+    width: 100%;
+}
+
+.match-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px 20px;
+    text-decoration: none !important;
+    transition: all 0.3s ease;
+    color: var(--text-main) !important;
+}
+
+.match-link:hover {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 15px rgba(0, 242, 254, 0.15);
+    background: rgba(0, 242, 254, 0.04);
+}
+
+.match-link .p1, .match-link .p2 {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.match-link .p1 {
+    color: var(--neon-cyan);
+    text-shadow: 0 0 4px rgba(0, 242, 254, 0.2);
+}
+
+.match-link .p2 {
+    color: var(--neon-magenta);
+    text-shadow: 0 0 4px rgba(255, 8, 68, 0.2);
+}
+
+.match-link .vs {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.seed-pill {
+    background: rgba(0, 242, 254, 0.1);
+    color: var(--neon-cyan);
+    border: 1px solid rgba(0, 242, 254, 0.2);
+    padding: 6px 15px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    text-shadow: 0 0 4px rgba(0, 242, 254, 0.3);
 }
